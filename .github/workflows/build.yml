@@ -77,13 +77,13 @@ jobs:
                      CrashReporter 3DRagdollDemo VNAssetConverter 3DNovelDemo; do
             [ -f "build/$bin" ] && cp "build/$bin" dist/ || true
           done
-          tar -czf PhysicsEngine3D-macOS.tar.gz -C dist .
+          zip -r PhysicsEngine3D-macOS.zip dist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: PhysicsEngine3D-macOS
-          path: PhysicsEngine3D-macOS.tar.gz
+          path: PhysicsEngine3D-macOS.zip
 
   build-windows:
     name: Windows Build
@@ -128,12 +128,29 @@ jobs:
             Copy-Item "$qtBin/Qt6OpenGLWidgets.dll" dist/PhysicsEngine3D-Windows/ -ErrorAction SilentlyContinue
           }
           Compress-Archive -Path dist/PhysicsEngine3D-Windows -DestinationPath PhysicsEngine3D-Windows.zip
+          choco install innosetup -y --no-progress
+          $iss = @"
+          [Setup]
+          AppName=PhysicsEngine3D
+          AppVersion=1.0.0
+          DefaultDirName={autopf}\PhysicsEngine3D
+          OutputDir=.
+          OutputBaseFilename=PhysicsEngine3D-Setup
+          Compression=lzma2
+          SolidCompression=yes
+          [Files]
+          Source: "dist\PhysicsEngine3D-Windows\*"; DestDir: "{app}"; Flags: recursesubdirs
+          "@
+          Set-Content -Path installer.iss -Value $iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: PhysicsEngine3D-Windows
-          path: PhysicsEngine3D-Windows.zip
+          path: |
+            PhysicsEngine3D-Windows.zip
+            PhysicsEngine3D-Setup.exe
 
   release:
     name: Publish Release
@@ -155,3 +172,4 @@ jobs:
           files: |
             dist/**/*.tar.gz
             dist/**/*.zip
+            dist/**/*.exe

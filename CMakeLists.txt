@@ -151,6 +151,7 @@ set_target_properties(VNAssetConverter PROPERTIES AUTOMOC ON)
 target_include_directories(VNAssetConverter PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/editor ${ASSIMP_MINGW_INCLUDE} ${Qt6Gui_INCLUDE_DIRS})
 target_link_libraries(VNAssetConverter PRIVATE
     Qt6::Core
+    Qt6::Gui
     ${ASSIMP_LIB}
     ${ZLIB_MINGW_LIB}
 )

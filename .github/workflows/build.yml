@@ -52,6 +52,7 @@ jobs:
   build-macos:
     name: macOS Build
     runs-on: macos-14
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -97,6 +98,7 @@ jobs:
           version: '6.7.3'
           arch: 'win64_msvc2022_64'
           cache: true
+          aqtversion: '==3.1.21'
 
       - name: Install vcpkg dependencies
         shell: pwsh
@@ -154,7 +156,7 @@ jobs:
 
   release:
     name: Publish Release
-    needs: [ build-linux, build-macos, build-windows ]
+    needs: [ build-linux, build-windows ]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:

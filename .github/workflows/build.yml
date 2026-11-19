@@ -1,0 +1,157 @@
+name: Build All Platforms
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Linux Build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential cmake \
+            qt6-base-dev qt6-multimedia-dev qt6-base-dev-tools \
+            libbullet-dev liblua5.4-dev libassimp-dev libgl1-mesa-dev
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Smoke test (headless demos)
+        run: |
+          ./build/3DRagdollDemo 3 || true
+          ./build/3DNovelDemo || true
+
+      - name: Package
+        run: |
+          mkdir -p dist/PhysicsEngine3D-Linux
+          cp build/3DLauncher build/3DEditor build/VNMateriaLab build/VNSocketEditor \
+             build/VNCodeStudio build/VN2DEditor build/VNModelStudio build/VNAudioPlayer \
+             build/VNWeatherStudio build/CrashReporter build/3DRagdollDemo \
+             build/VNAssetConverter build/3DNovelDemo dist/PhysicsEngine3D-Linux/ 2>/dev/null || true
+          tar -czf PhysicsEngine3D-Linux.tar.gz -C dist PhysicsEngine3D-Linux
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhysicsEngine3D-Linux
+          path: PhysicsEngine3D-Linux.tar.gz
+
+  build-macos:
+    name: macOS Build
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install cmake qt bullet lua assimp
+
+      - name: Configure
+        run: |
+          Qt6_DIR="$(brew --prefix qt)/lib/cmake/Qt6"
+          cmake -B build -DCMAKE_BUILD_TYPE=Release \
+            -DQt6_DIR="$Qt6_DIR" \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix qt);$(brew --prefix bullet);$(brew --prefix lua);$(brew --prefix assimp)"
+
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.ncpu)
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          for bin in 3DLauncher 3DEditor VNMateriaLab VNSocketEditor VNCodeStudio \
+                     VN2DEditor VNModelStudio VNAudioPlayer VNWeatherStudio \
+                     CrashReporter 3DRagdollDemo VNAssetConverter 3DNovelDemo; do
+            [ -f "build/$bin" ] && cp "build/$bin" dist/ || true
+          done
+          tar -czf PhysicsEngine3D-macOS.tar.gz -C dist .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhysicsEngine3D-macOS
+          path: PhysicsEngine3D-macOS.tar.gz
+
+  build-windows:
+    name: Windows Build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+          arch: 'win64_msvc'
+          cache: true
+
+      - name: Install vcpkg dependencies
+        shell: pwsh
+        run: |
+          vcpkg install --triplet x64-windows bullet3 lua assimp
+          echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/PhysicsEngine3D-Windows | Out-Null
+          Get-ChildItem -Path build -Filter *.exe -Recurse |
+            Where-Object { $_.FullName -notmatch 'autogen|CMakeFiles' } |
+            Copy-Item -Destination dist/PhysicsEngine3D-Windows/
+          $qtBin = "$env:Qt6_DIR/bin"
+          if (Test-Path $qtBin) {
+            Copy-Item "$qtBin/Qt6Core.dll","$qtBin/Qt6Gui.dll","$qtBin/Qt6Widgets.dll","$qtBin/Qt6Multimedia.dll" dist/PhysicsEngine3D-Windows/ -ErrorAction SilentlyContinue
+            Copy-Item "$qtBin/Qt6OpenGLWidgets.dll" dist/PhysicsEngine3D-Windows/ -ErrorAction SilentlyContinue
+          }
+          Compress-Archive -Path dist/PhysicsEngine3D-Windows -DestinationPath PhysicsEngine3D-Windows.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhysicsEngine3D-Windows
+          path: PhysicsEngine3D-Windows.zip
+
+  release:
+    name: Publish Release
+    needs: [ build-linux, build-macos, build-windows ]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/**/*.tar.gz
+            dist/**/*.zip

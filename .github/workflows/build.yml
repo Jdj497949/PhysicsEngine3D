@@ -94,8 +94,8 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.7.*'
-          arch: 'win64_msvc'
+          version: '6.7.3'
+          arch: 'win64_msvc2022_64'
           cache: true
 
       - name: Install vcpkg dependencies

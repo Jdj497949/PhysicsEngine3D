@@ -1,0 +1,61 @@
+# ============ 构建产物 ============
+build/
+build-*/
+[Bb]uild/
+build-win/
+build-linux/
+build-macos/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+!**/CMakeLists.txt
+
+# ============ 可执行文件与动态库 ============
+*.exe
+*.dll
+*.so
+*.so.*
+*.dylib
+*.a
+*.lib
+*.out
+*.app/
+
+# ============ Qt 生成物 ============
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*_autogen/
+*_automoc.cpp
+
+# ============ 编译中间文件 ============
+*.o
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.gch
+*.pch
+
+# ============ 运行时与日志 ============
+*.log
+crash-dumps/
+CrashReports/
+*.dmp
+
+# ============ 编辑器与系统垃圾 ============
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============ 打包产物 ============
+dist/
+*.zip
+*.tar.gz
+*.7z
+!assets/*.zip

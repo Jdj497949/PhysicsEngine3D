@@ -99,6 +99,7 @@ jobs:
           arch: 'win64_msvc2019_64'
           cache: true
           aqtversion: '==3.1.21'
+          modules: 'qtmultimedia'
 
       - name: Install vcpkg dependencies
         shell: pwsh

@@ -125,10 +125,14 @@ jobs:
           Get-ChildItem -Path build -Filter *.exe -Recurse |
             Where-Object { $_.FullName -notmatch 'autogen|CMakeFiles' } |
             Copy-Item -Destination dist/PhysicsEngine3D-Windows/
-          $qtBin = "$env:Qt6_DIR/bin"
+          $qtBin = "$env:QT_ROOT_DIR/bin"
           if (Test-Path $qtBin) {
-            Copy-Item "$qtBin/Qt6Core.dll","$qtBin/Qt6Gui.dll","$qtBin/Qt6Widgets.dll","$qtBin/Qt6Multimedia.dll" dist/PhysicsEngine3D-Windows/ -ErrorAction SilentlyContinue
-            Copy-Item "$qtBin/Qt6OpenGLWidgets.dll" dist/PhysicsEngine3D-Windows/ -ErrorAction SilentlyContinue
+            Copy-Item "$qtBin/Qt6*.dll" dist/PhysicsEngine3D-Windows/ -ErrorAction SilentlyContinue
+            New-Item -ItemType Directory -Force -Path dist/PhysicsEngine3D-Windows/plugins/platforms | Out-Null
+            Copy-Item "$env:QT_ROOT_DIR/plugins/platforms/qwindows.dll" dist/PhysicsEngine3D-Windows/plugins/platforms/ -ErrorAction SilentlyContinue
+          }
+          foreach ($dll in 'msvcp140.dll','vcruntime140.dll','vcruntime140_1.dll') {
+            Copy-Item "C:\Windows\System32\$dll" dist/PhysicsEngine3D-Windows/ -ErrorAction SilentlyContinue
           }
           Compress-Archive -Path dist/PhysicsEngine3D-Windows -DestinationPath PhysicsEngine3D-Windows.zip
           choco install innosetup -y --no-progress

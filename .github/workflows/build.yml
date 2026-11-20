@@ -101,6 +101,10 @@ jobs:
           aqtversion: '==3.1.21'
           modules: 'qtmultimedia'
 
+      - name: Update vcpkg registry
+        shell: pwsh
+        run: git -C $env:VCPKG_INSTALLATION_ROOT pull --ff-only || echo "vcpkg update skipped"
+
       - name: Install vcpkg dependencies
         shell: pwsh
         run: |

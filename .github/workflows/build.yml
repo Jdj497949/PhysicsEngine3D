@@ -105,6 +105,20 @@ jobs:
         shell: pwsh
         run: git -C $env:VCPKG_INSTALLATION_ROOT pull --ff-only || echo "vcpkg update skipped"
 
+      - name: Patch kubazip hash (upstream tarball regenerated)
+        shell: pwsh
+        run: |
+          $old = '817da7dd6f477adeb4986d542c20b6f28bed24895b09d3a69cfddf28cc78a7259db3a5e8f879ac263b6bda11c7bb70d00d1d8b626e33b4280366c769bb30bf50'
+          $new = 'f445120d03c9d21b91784a12fd2ae33357a7d116270158ff8e5a88eade586a534d69c50de059d4a9399610720b2076a39117721ca6cd16bade60c676197f2e9c'
+          $portDir = Join-Path $env:VCPKG_INSTALLATION_ROOT 'ports/kubazip'
+          Get-ChildItem $portDir -File | ForEach-Object {
+            $c = Get-Content $_.FullName -Raw
+            if ($c.Contains($old)) { Set-Content $_.FullName ($c.Replace($old, $new)); Write-Host "patched $($_.Name)" }
+          }
+          $dl = Join-Path $env:VCPKG_INSTALLATION_ROOT 'downloads'
+          New-Item -ItemType Directory -Force -Path $dl | Out-Null
+          Invoke-WebRequest -Uri 'https://github.com/kuba--/zip/archive/v0.3.15.tar.gz' -OutFile (Join-Path $dl 'kuba---zip-v0.3.15.tar.gz')
+
       - name: Install vcpkg dependencies
         shell: pwsh
         run: |

@@ -87,6 +87,13 @@ static int runApp(QApplication &app, int argc, char **argv) {
                 w.demoAttachScript(0, projectPath + "/assets/spin.lua");
             });
             QTimer::singleShot(4200, &w, [shot]{ grabFullscreen(shot); });
+        } else if (mode == "runscene") {
+            // 直接运行当前项目场景（模板演示用）：先拍编辑器画面，再运行拍游戏画面
+            QTimer::singleShot(1800, &w, [&w, shot]{ w.grab().save(QString(shot).replace(".png", "_edit.png")); });
+            QTimer::singleShot(2600, &w, [&w]{ w.onRun(); });
+            QTimer::singleShot(7000, &w, [&w, shot]{ w.grab().save(shot); });
+            QTimer::singleShot(12000, &w, [&w, shot]{ w.grab().save(QString(shot).replace(".png", "_later.png")); });
+            QTimer::singleShot(13500, &app, []{ QApplication::quit(); });
         } else if (mode == "luarun") {
             // 点运行 -> Lua 生命周期生效，方块被脚本驱动旋转
             QTimer::singleShot(800, &w, [&w]{ w.createObject(0); w.createObject(2); });

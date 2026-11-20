@@ -6,6 +6,8 @@
 // 设置：语言 / 主题即时切换（暗黑/明亮）/ 代理 / 下载路径 / 缓存清理；关于页：版本/编译时间/开源库/协议/作者
 #include <QApplication>
 #include <QMainWindow>
+#include <QRegularExpression>
+#include <QEventLoop>
 #include <QStackedWidget>
 #include <QWidget>
 #include <QVBoxLayout>
@@ -748,9 +750,85 @@ private slots:
             QMessageBox::warning(this, L("提示", "Info"), L("编辑器尚未安装，请先到「引擎版本」页一键下载。", "Editor not installed. Download it on the Installs page first."));
             return;
         }
-        fprintf(stderr, "[LAUNCH] Starting 3DEditor with args: --project=%s\n", QFileInfo(projPath).fileName().toUtf8().constData());
+        fprintf(stderr, "[LAUNCH] Starting 3DEditor with args: %s\n", projPath.toUtf8().constData());
         fflush(stderr);
-        QProcess::startDetached(editor, QStringList() << "--project=" + projPath);
+        QProcess::startDetached(editor, QStringList() << projPath);   // 3DEditor 的 argv[1] 为纯项目路径
+    }
+
+    // 从 GitHub Release 拉取学习模板包（零参数：URL 由仓库自动解析）
+    bool downloadTemplateZip(const QString &assetKey, QString &zipPath) {
+        QNetworkAccessManager nam;
+        QNetworkRequest req{QUrl("https://api.github.com/repos/Jdj497949/PhysicsEngine3D/releases/latest")};
+        req.setHeader(QNetworkRequest::UserAgentHeader, "VNLauncher/1.0");
+        auto *meta = nam.get(req);
+        QEventLoop loop;
+        QObject::connect(meta, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        loop.exec();
+        if (meta->error() != QNetworkReply::NoError) {
+            fprintf(stderr, "[TEMPLATE] Meta failed: %s\n", meta->errorString().toUtf8().constData());
+            return false;
+        }
+        QJsonDocument doc = QJsonDocument::fromJson(meta->readAll());
+        meta->deleteLater();
+        QString url;
+        for (const QJsonValue &v : doc.object()["assets"].toArray()) {
+            if (v.toObject()["name"].toString().contains(assetKey, Qt::CaseInsensitive)) {
+                url = v.toObject()["browser_download_url"].toString();
+                break;
+            }
+        }
+        if (url.isEmpty()) { fprintf(stderr, "[TEMPLATE] Asset %s not found in release\n", assetKey.toUtf8().constData()); return false; }
+        QNetworkRequest r2{QUrl(url)};
+        r2.setHeader(QNetworkRequest::UserAgentHeader, "VNLauncher/1.0");
+        r2.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+        auto *dl = nam.get(r2);
+        QObject::connect(dl, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        loop.exec();
+        if (dl->error() != QNetworkReply::NoError) {
+            fprintf(stderr, "[TEMPLATE] Download failed: %s\n", dl->errorString().toUtf8().constData());
+            dl->deleteLater();
+            return false;
+        }
+        zipPath = "/tmp/" + assetKey + ".zip";
+        QFile f(zipPath);
+        if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) { dl->deleteLater(); return false; }
+        f.write(dl->readAll());
+        f.close();
+        dl->deleteLater();
+        fprintf(stderr, "[TEMPLATE] Downloaded %s (%lld bytes)\n", zipPath.toUtf8().constData(),
+                QFileInfo(zipPath).size());
+        return true;
+    }
+
+    // 把解压出来的模板目录改名为项目名，并重写 Project.vnproj 的 projectName
+    bool finalizeTemplateProject(const QString &extractDir, const QString &name, const QString &parentDir, QString &projPath) {
+        // 找到解压出来的唯一一级目录
+        QString inner;
+        for (const QFileInfo &fi : QDir(extractDir).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+            inner = fi.absoluteFilePath();
+            break;
+        }
+        if (inner.isEmpty()) return false;
+        projPath = parentDir + "/" + name;
+        if (!QDir().rename(inner, projPath)) {
+            // /tmp 与项目目录可能跨文件系统，rename 失败时退回复制
+            if (QProcess::execute("cp", {"-r", inner, projPath}) != 0 || !QFileInfo::exists(projPath)) return false;
+            QDir(inner).removeRecursively();
+        }
+        QDir(extractDir).removeRecursively();
+        // 重写 projectName
+        QFile f(projPath + "/Project.vnproj");
+        if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QString all = QString::fromUtf8(f.readAll());
+            f.close();
+            all.replace(QRegularExpression("^projectName=.*$", QRegularExpression::MultilineOption),
+                        "projectName=" + name);
+            if (f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+                f.write(all.toUtf8());
+                f.close();
+            }
+        }
+        return true;
     }
 
     void onCreateNewProject() {
@@ -759,21 +837,62 @@ private slots:
         QString dir = npPath_->text().trimmed();
         if (dir.isEmpty()) dir = projectsRoot();
         QDir().mkpath(dir);
-        QString projPath;
-        QString type = selTpl_ == 2 ? "2D" : "3D";
-        const char *tplArr[] = {"blank", "physics", "platformer", "socket"};
-        QString tpl = tplArr[selTpl_];
-        if (!createProjectStd(name, dir, projPath, type, tpl)) {
+        QString projPath = dir + "/" + name;
+        if (QFileInfo::exists(projPath)) {
             QMessageBox::warning(this, L("提示", "Info"), L("目录已存在同名项目", "A project with this name already exists"));
             return;
         }
-        fprintf(stderr, "[LAUNCH] Project created: %s (type=%s template=%s)\n", projPath.toUtf8().constData(), type.toUtf8().constData(), tpl.toUtf8().constData());
+        const char *tplArr[] = {"blank", "physics", "platformer", "shooter", "novel", "socket"};
+        QString tpl = tplArr[selTpl_];
+        QString type = (tpl == "platformer" || tpl == "shooter" || tpl == "novel") ? "2D" : "3D";
+
+        // 本地模板：blank / socket 直接生成
+        if (tpl == "blank" || tpl == "socket") {
+            if (!createProjectStd(name, dir, projPath, type, tpl)) {
+                QMessageBox::warning(this, L("提示", "Info"), L("目录已存在同名项目", "A project with this name already exists"));
+                return;
+            }
+            fprintf(stderr, "[LAUNCH] Project created: %s (type=%s template=%s)\n", projPath.toUtf8().constData(), type.toUtf8().constData(), tpl.toUtf8().constData());
+            fflush(stderr);
+            populateProjects(name);
+            selectNav(0);
+            QTimer::singleShot(80, this, [this]() {
+                if (highlightedCard_) { projScroll_->ensureWidgetVisible(highlightedCard_, 30, 30); highlightedCard_ = nullptr; }
+            });
+            onOpenProject(projPath);   // 创建完成直接进编辑器
+            return;
+        }
+
+        // 学习模板：从仓库一键下载（零参数），失败则降级为本地骨架
+        const char *assetKeys[] = {"", "Template-3D-Physics", "Template-2D-Platformer", "Template-2D-Shooter", "Template-Visual-Novel", ""};
+        QString assetKey = assetKeys[selTpl_];
+        npStatus_->setText(L("⬇ 正在从仓库下载学习模板…", "⬇ Downloading learning template from repository..."));
+        qApp->processEvents();
+        QString zipPath;
+        bool ok = downloadTemplateZip(assetKey, zipPath);
+        if (ok) {
+            QString extractDir = QString("/tmp/tpl_extract_%1").arg(tpl);
+            QDir(extractDir).removeRecursively();
+            QDir().mkpath(extractDir);
+            ok = QProcess::execute("unzip", {"-oq", zipPath, "-d", extractDir}) == 0;
+            if (ok) ok = finalizeTemplateProject(extractDir, name, dir, projPath);
+        }
+        if (!ok) {
+            fprintf(stderr, "[LAUNCHER] Template download failed, falling back to local skeleton\n");
+            fflush(stderr);
+            npStatus_->setText(L("⚠ 模板下载失败，已创建本地骨架项目（联网后可重试）", "⚠ Template download failed. Created a local skeleton instead."));
+            if (!createProjectStd(name, dir, projPath, type, tpl)) return;
+        } else {
+            npStatus_->setText(L("✅ 模板下载完成，正在打开编辑器…", "✅ Template ready. Launching editor..."));
+            fprintf(stderr, "[LAUNCH] Template project created: %s (type=%s template=%s)\n", projPath.toUtf8().constData(), type.toUtf8().constData(), tpl.toUtf8().constData());
+        }
         fflush(stderr);
         populateProjects(name);
         selectNav(0);
         QTimer::singleShot(80, this, [this]() {
             if (highlightedCard_) { projScroll_->ensureWidgetVisible(highlightedCard_, 30, 30); highlightedCard_ = nullptr; }
         });
+        onOpenProject(projPath);   // 直接进编辑器，不经过项目管理器
     }
 
     void onBrowseProjectDir() {
@@ -976,13 +1095,15 @@ private:
 
         const struct { const char *icon, *zh, *en, *descZh, *descEn; } tpl[] = {
             {"🌄", "3D 空白项目", "3D Blank", "从零开始搭建你的世界", "Build your world from scratch"},
-            {"🎳", "3D 物理沙盒", "3D Physics Sandbox", "自带刚体与碰撞演示", "Rigidbodies & collisions included"},
-            {"🎮", "2D 平台跳跃", "2D Platformer", "横版跳跃起步模板", "Side-scroller starter"},
+            {"🎳", "3D 物理沙盒", "3D Physics Sandbox", "保龄球演示 + 刚体碰撞教学", "Bowling demo + rigidbody lessons"},
+            {"🏃", "2D 平台跳跃", "2D Platformer", "金币 + 平台 + 终点旗完整关卡", "Coins, platforms & goal flag"},
+            {"🔫", "2D 射击", "2D Shooter", "太空射击 + 敌机巡逻 + 计分脚本", "Space shooter with scoring script"},
+            {"📖", "视觉小说", "Visual Novel", "分支选项 + 立绘 + 三结局剧本", "Branching choices & three endings"},
             {"🔌", "插座蓝图演示", "Socket Blueprint Demo", "事件与逻辑连线示例", "Event & logic wiring sample"},
         };
         auto *grid = new QGridLayout();
         grid->setSpacing(12);
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 6; ++i) {
             auto *b = new QPushButton(QString("%1  %2\n%3").arg(tpl[i].icon).arg(L(tpl[i].zh, tpl[i].en)).arg(L(tpl[i].descZh, tpl[i].descEn)), w);
             b->setObjectName("tplBtn");
             b->setCheckable(true);
@@ -1021,6 +1142,10 @@ private:
         create->setFixedHeight(44);
         connect(create, &QPushButton::clicked, this, &HubWindow::onCreateNewProject);
         lay->addWidget(create);
+        npStatus_ = new QLabel(QString(), w);
+        npStatus_->setObjectName("pageSub");
+        npStatus_->setWordWrap(true);
+        lay->addWidget(npStatus_);
         lay->addStretch();
         return w;
     }
@@ -1244,6 +1369,7 @@ private:
     QFrame *card_ = nullptr;
     QLabel *cardText_ = nullptr, *status_ = nullptr, *instStatus_ = nullptr;
     QLineEdit *npName_ = nullptr, *npPath_ = nullptr, *proxyEdit_ = nullptr, *portEdit_ = nullptr;
+    QLabel *npStatus_ = nullptr;
     QPushButton *btnDl_ = nullptr, *btnOpen_ = nullptr, *btnOpenDir_ = nullptr, *btnUninstall_ = nullptr;
     QProgressBar *bar_ = nullptr;
     QScrollArea *projScroll_ = nullptr;

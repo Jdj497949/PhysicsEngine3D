@@ -2,453 +2,231 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PhysicsEngine3D — 纯手搓跨平台 3D 物理引擎 + VN 工具链</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>NovaEngine3D — 纯手搓跨平台 3D 物理引擎</title>
+<meta name="description" content="NovaEngine3D：C++17 + Qt6 + Bullet 纯手搓跨平台 3D 物理引擎与 2D 视觉小说引擎，13 个独立程序，AES-256 资源加密，布娃娃物理。">
 <style>
-  :root {
-    --bg: #05060f;
-    --bg2: #0a0d1f;
-    --cyan: #00f0ff;
-    --magenta: #ff2bd6;
-    --purple: #7b2bff;
-    --text: #d8e2ff;
-    --dim: #6b7aa8;
-    --card: rgba(16, 22, 48, .72);
-    --border: rgba(0, 240, 255, .22);
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    overflow-x: hidden;
-    min-height: 100vh;
-  }
+:root{
+  --bg:#05070d; --bg2:#0a0e1a; --card:#0d1224; --line:rgba(120,140,255,.14);
+  --neon1:#4f7cff; --neon2:#a855f7; --neon3:#22d3ee;
+  --txt:#e7ecff; --dim:#8b93b8;
+  --grad:linear-gradient(90deg,#4f7cff,#a855f7 55%,#22d3ee);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;line-height:1.6;-webkit-tap-highlight-color:transparent}
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px}
+section{padding:72px 0}
+h2{font-size:clamp(26px,5vw,40px);font-weight:800;letter-spacing:.5px;margin-bottom:14px}
+.grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.kicker{display:inline-block;font-size:13px;letter-spacing:3px;color:var(--neon3);border:1px solid rgba(34,211,238,.35);border-radius:999px;padding:4px 14px;margin-bottom:18px;background:rgba(34,211,238,.06)}
 
-  /* ============ 粒子画布铺底 ============ */
-  #particles {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-  }
+/* ===== HERO ===== */
+.hero{min-height:92vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding-top:60px}
+.logo{font-size:clamp(44px,11vw,96px);font-weight:900;letter-spacing:2px;line-height:1.1;
+  background:linear-gradient(90deg,#4f7cff 0%,#a855f7 45%,#22d3ee 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 24px rgba(120,100,255,.45));animation:pulse 4s ease-in-out infinite}
+@keyframes pulse{0%,100%{filter:drop-shadow(0 0 18px rgba(120,100,255,.35))}50%{filter:drop-shadow(0 0 38px rgba(168,85,247,.6))}}
+.slogan{margin-top:18px;font-size:clamp(16px,3.4vw,22px);color:var(--dim);max-width:640px}
+.slogan b{color:var(--txt)}
+.hero-btns{display:flex;gap:16px;margin-top:40px;width:100%;max-width:420px;flex-direction:column}
+.btn{display:block;text-align:center;padding:16px 28px;border-radius:14px;font-size:17px;font-weight:700;text-decoration:none;transition:.25s}
+.btn-primary{background:var(--grad);color:#fff;box-shadow:0 0 24px rgba(79,124,255,.4)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 44px rgba(168,85,247,.65)}
+.btn-ghost{border:1.5px solid rgba(140,150,255,.45);color:var(--txt);background:rgba(13,18,36,.6)}
+.btn-ghost:hover{border-color:var(--neon3);color:var(--neon3);box-shadow:0 0 24px rgba(34,211,238,.3);transform:translateY(-3px)}
+.hero-meta{margin-top:34px;color:var(--dim);font-size:13px;letter-spacing:1px}
+.hero-meta span{color:var(--neon3)}
 
-  /* ============ 网格背景 ============ */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0, 240, 255, .05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 240, 255, .05) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse at 50% 20%, black 30%, transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse at 50% 20%, black 30%, transparent 75%);
-    z-index: 1;
-    pointer-events: none;
-  }
+/* ===== BENTO ===== */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+.card{grid-column:span 2;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;position:relative;overflow:hidden;transition:.3s}
+.card::before{content:"";position:absolute;inset:0;background:radial-gradient(600px circle at var(--mx,50%) var(--my,50%),rgba(120,110,255,.16),transparent 42%);opacity:0;transition:.3s}
+.card:hover{transform:translateY(-6px);border-color:rgba(140,120,255,.55);box-shadow:0 0 0 1px rgba(140,120,255,.35),0 12px 44px rgba(90,80,255,.28),0 0 60px rgba(168,85,247,.18)}
+.card:hover::before{opacity:1}
+.card h3{font-size:19px;margin-bottom:8px}
+.card p{color:var(--dim);font-size:14.5px}
+.card .ico{font-size:30px;margin-bottom:12px;display:block}
+.card-big{grid-column:span 3}
+.card-wide{grid-column:span 6;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.num{font-size:clamp(34px,6vw,52px);font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-  main { position: relative; z-index: 2; }
+/* ===== SHOWCASE ===== */
+.show{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.shot{border-radius:18px;border:1px solid var(--line);overflow:hidden;background:var(--card);transition:.3s}
+.shot:hover{border-color:rgba(140,120,255,.55);box-shadow:0 14px 50px rgba(90,80,255,.3)}
+.shot .pic{height:210px;display:flex;align-items:center;justify-content:center;font-size:56px;
+  background:linear-gradient(135deg,#0b1024 0%,#141a3d 55%,#1c1240 100%);position:relative}
+.shot .pic::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.02) 3px 4px)}
+.shot .cap{padding:18px 20px}
+.shot .cap h3{font-size:18px;margin-bottom:6px}
+.shot .cap p{color:var(--dim);font-size:14px}
+.tag{display:inline-block;margin-top:10px;font-size:12px;color:var(--neon3);border:1px solid rgba(34,211,238,.4);border-radius:999px;padding:2px 10px}
 
-  /* ============ 顶栏 ============ */
-  nav {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 32px;
-    backdrop-filter: blur(12px);
-    background: rgba(5, 6, 15, .6);
-    border-bottom: 1px solid var(--border);
-  }
-  .logo {
-    font-weight: 800;
-    letter-spacing: 2px;
-    font-size: 18px;
-    background: linear-gradient(90deg, var(--cyan), var(--magenta));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-decoration: none;
-  }
-  .nav-links { display: flex; gap: 24px; }
-  .nav-links a {
-    color: var(--dim);
-    text-decoration: none;
-    font-size: 14px;
-    transition: color .2s;
-  }
-  .nav-links a:hover { color: var(--cyan); }
+/* ===== ABOUT ===== */
+.about-box{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--neon2);border-radius:14px;padding:30px;color:var(--dim);font-size:15.5px}
+.about-box b{color:var(--txt)}
+.about-box .q{font-size:clamp(18px,3.4vw,24px);color:var(--txt);font-weight:700;margin-bottom:14px}
 
-  /* ============ Hero ============ */
-  .hero {
-    text-align: center;
-    padding: 110px 24px 70px;
-  }
-  .hero .badge {
-    display: inline-block;
-    font-size: 12px;
-    letter-spacing: 3px;
-    color: var(--cyan);
-    border: 1px solid var(--border);
-    padding: 6px 18px;
-    border-radius: 999px;
-    margin-bottom: 28px;
-    background: rgba(0, 240, 255, .06);
-  }
-  h1.title {
-    font-size: clamp(44px, 8vw, 96px);
-    font-weight: 900;
-    letter-spacing: 2px;
-    line-height: 1.1;
-    background: linear-gradient(120deg, var(--cyan) 0%, #4dc6ff 30%, var(--magenta) 65%, var(--purple) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 0 60px rgba(0, 240, 255, .25);
-  }
-  .hero .subtitle {
-    max-width: 720px;
-    margin: 26px auto 0;
-    color: var(--dim);
-    font-size: 17px;
-    line-height: 1.9;
-  }
-  .hero .subtitle strong { color: var(--text); }
+/* ===== DOWNLOAD ===== */
+.dl{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.dl-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:26px 14px;border-radius:16px;
+  background:var(--card);border:1px solid var(--line);text-decoration:none;color:var(--txt);transition:.3s;text-align:center}
+.dl-btn:hover{transform:translateY(-5px);border-color:rgba(140,120,255,.6);box-shadow:0 0 40px rgba(120,100,255,.35)}
+.dl-btn .os{font-size:34px}
+.dl-btn .name{font-weight:700}
+.dl-btn .ver{font-size:12.5px;color:var(--dim);word-break:break-all}
+.dl-status{margin-top:18px;text-align:center;color:var(--dim);font-size:13.5px}
+.dl-status a{color:var(--neon3)}
 
-  /* ============ 下载按钮 ============ */
-  .downloads {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 46px;
-  }
-  .dl-btn {
-    position: relative;
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    min-width: 200px;
-    padding: 20px 34px;
-    border-radius: 14px;
-    text-decoration: none;
-    border: 1px solid var(--border);
-    background: var(--card);
-    transition: transform .2s, box-shadow .2s, border-color .2s;
-    overflow: hidden;
-  }
-  .dl-btn::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.08) 50%, transparent 70%);
-    transform: translateX(-100%);
-    transition: transform .6s;
-  }
-  .dl-btn:hover::after { transform: translateX(100%); }
-  .dl-btn:hover {
-    transform: translateY(-4px);
-    border-color: var(--cyan);
-    box-shadow: 0 8px 40px rgba(0, 240, 255, .25);
-  }
-  .dl-btn .os {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--text);
-  }
-  .dl-btn .ver {
-    font-size: 12px;
-    color: var(--dim);
-    letter-spacing: 1px;
-  }
-  .dl-btn.windows .os { color: #4dc6ff; }
-  .dl-btn.macos  .os { color: #ff2bd6; }
-  .dl-btn.linux  .os { color: #ffcf4d; }
-  .dl-status {
-    text-align: center;
-    margin-top: 16px;
-    font-size: 13px;
-    color: var(--dim);
-    min-height: 20px;
-  }
-  .dl-status a { color: var(--cyan); }
-  .dl-status.err { color: #ff6b6b; }
+/* ===== FOOTER ===== */
+footer{border-top:1px solid var(--line);padding:36px 0 48px;text-align:center;color:var(--dim);font-size:13.5px}
+footer a{color:var(--neon3);text-decoration:none}
+footer .row{margin-top:8px}
 
-  /* ============ 版块通用 ============ */
-  section { max-width: 1080px; margin: 0 auto; padding: 70px 24px; }
-  h2.sec {
-    font-size: 30px;
-    font-weight: 800;
-    margin-bottom: 8px;
-    background: linear-gradient(90deg, var(--cyan), var(--magenta));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .sec-sub { color: var(--dim); margin-bottom: 34px; font-size: 15px; }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 18px;
-  }
-  .feature {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 22px;
-    transition: transform .2s, border-color .2s;
-  }
-  .feature:hover { transform: translateY(-3px); border-color: rgba(255, 43, 214, .5); }
-  .feature .num {
-    font-size: 12px;
-    color: var(--magenta);
-    letter-spacing: 2px;
-    margin-bottom: 8px;
-  }
-  .feature h3 { font-size: 17px; margin-bottom: 8px; }
-  .feature p { font-size: 13.5px; color: var(--dim); line-height: 1.8; }
-
-  /* ============ 代码块 ============ */
-  .codebox {
-    background: #070a18;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px 24px;
-    overflow-x: auto;
-    font-family: "JetBrains Mono", Consolas, monospace;
-    font-size: 13.5px;
-    line-height: 1.8;
-    color: #9fb6e8;
-  }
-  .codebox .c { color: #4b5d8c; }
-  .codebox .k { color: var(--magenta); }
-  .codebox .s { color: #5df0a0; }
-
-  /* ============ 页脚 ============ */
-  footer {
-    text-align: center;
-    padding: 50px 24px;
-    color: var(--dim);
-    font-size: 13px;
-    border-top: 1px solid var(--border);
-  }
-  footer a { color: var(--cyan); }
-
-  /* ============ 扫描线氛围 ============ */
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,.08) 2px 4px);
-    z-index: 3;
-    pointer-events: none;
-  }
+/* ===== MOBILE ===== */
+@media (max-width:760px){
+  section{padding:52px 0}
+  .bento{grid-template-columns:1fr}
+  .card,.card-big{grid-column:span 1}
+  .card-wide{grid-column:span 1;flex-direction:column;align-items:flex-start}
+  .show{grid-template-columns:1fr}
+  .dl{grid-template-columns:1fr}
+  .hero-btns{max-width:100%}
+}
 </style>
 </head>
 <body>
+<canvas id="stars"></canvas>
 
-<canvas id="particles"></canvas>
+<div class="wrap">
 
-<nav>
-  <a class="logo" href="#">PhysicsEngine3D</a>
-  <div class="nav-links">
-    <a href="#features">特色</a>
-    <a href="#quickstart">快速开始</a>
-    <a href="#github-link" target="_blank" rel="noopener">GitHub</a>
-  </div>
-</nav>
-
-<main>
-  <!-- ============ Hero ============ -->
+  <!-- HERO -->
   <header class="hero">
-    <span class="badge">OPEN SOURCE · MIT LICENSE · v1.0</span>
-    <h1 class="title">PHYSICS<br>ENGINE 3D</h1>
-    <p class="subtitle">
-      纯手搓的<strong>跨平台 3D 物理引擎 + 视觉小说工具链</strong>。<br>
-      C++17 · Qt6 · OpenGL · Bullet Physics · Lua 5.4 —— 13 个独立程序，从布娃娃物理到 AES-256 加密打包，<strong>每一行都是自己写的</strong>。
-    </p>
-
-    <!-- ============ 三平台下载 ============ -->
-    <div class="downloads">
-      <a class="dl-btn windows" href="#" data-os="windows">
-        <span class="os">Windows</span>
-        <span class="ver">获取安装包…</span>
-      </a>
-      <a class="dl-btn macos" href="#" data-os="macos">
-        <span class="os">macOS</span>
-        <span class="ver">获取安装包…</span>
-      </a>
-      <a class="dl-btn linux" href="#" data-os="linux">
-        <span class="os">Linux</span>
-        <span class="ver">获取安装包…</span>
-      </a>
+    <div class="logo">NovaEngine3D</div>
+    <p class="slogan">一个人、一台电脑、<b>15000 行 C++</b>，从零手搓的跨平台 3D 物理引擎 —— 布娃娃、蓝图、加密资源包、视觉小说层，全都装进去了。</p>
+    <div class="hero-btns">
+      <a class="btn btn-primary" href="#download">⬇ 下载引擎</a>
+      <a class="btn btn-ghost" href="https://github.com/Jdj497949/PhysicsEngine3D">⭐ GitHub 仓库</a>
     </div>
-    <div class="dl-status" id="dl-status">正在从 GitHub Releases 获取最新版本…</div>
+    <p class="hero-meta"><span>13</span> 个独立程序 · <span>15000+</span> 行代码 · <span>3</span> 平台构建 · MIT 开源</p>
   </header>
 
-  <!-- ============ 特色 ============ -->
+  <!-- FEATURES -->
   <section id="features">
-    <h2 class="sec">// 十大特色</h2>
-    <p class="sec-sub">不是宣传语，是构建日志。</p>
-    <div class="grid" id="feature-grid"></div>
+    <span class="kicker">FEATURES</span>
+    <h2>它不是玩具，是<span class="grad-text">全家桶</span></h2>
+    <div class="bento">
+      <div class="card card-big"><span class="ico">🧩</span><h3>纯 C++17 架构</h3><p>Qt6 界面 + Bullet 物理 + Lua 脚本 + Assimp 模型导入，无游戏引擎依赖，CMake 一键构建，代码全部可读可改。</p></div>
+      <div class="card card-big"><span class="ico">🎛️</span><h3>10+ 独立程序</h3><p>3D 编辑器、启动器、插座蓝图编辑器、2D UI 编辑器、视觉小说代码工作室、音频播放器、天气工作室……各司其职。</p></div>
+      <div class="card"><span class="ico">🔐</span><h3>AES-256 资源加密</h3><p>资源打包器内置 AES-256 CTR 加密，美术素材打包即上锁，防白嫖。</p></div>
+      <div class="card"><span class="ico">🧍</span><h3>布娃娃物理</h3><p>基于 Bullet 的全身关节布娃娃，角色被撞飞时四肢自然瘫软，物理帧与剧情渲染并行不卡。</p></div>
+      <div class="card"><span class="ico">📦</span><h3>全平台自动打包</h3><p>GitHub Actions 云端自动构建，打 tag 即出 Windows 安装程序 / Linux 压缩包，零本地环境。</p></div>
+      <div class="card card-wide"><div><span class="num">1036</span></div><div><h3>个蓝图节点</h3><p>插座蓝图系统内置 20+ 分类、上千节点，剧情控制、物理、UI、音频全部图形化连线，不写代码也能拼出完整游戏逻辑。</p></div></div>
+    </div>
   </section>
 
-  <!-- ============ 快速开始 ============ -->
-  <section id="quickstart">
-    <h2 class="sec">// 60 秒跑通</h2>
-    <p class="sec-sub">Linux / macOS 依赖装好后，三条命令见布娃娃。</p>
-    <div class="codebox"><span class="c"># 装依赖（Ubuntu 为例）</span>
-sudo apt install -y build-essential cmake qt6-base-dev qt6-multimedia-dev \
-    libbullet-dev liblua5.4-dev libassimp-dev
+  <!-- SHOWCASE -->
+  <section id="showcase">
+    <span class="kicker">SHOWCASE</span>
+    <h2>引擎里长出来的<span class="grad-text">世界</span></h2>
+    <div class="show">
+      <div class="shot">
+        <div class="pic">🌾</div>
+        <div class="cap"><h3>百万级草地（规划中）</h3><p>GPU 实例化渲染的草地系统：风吹过时草叶逐层起伏，角色走过拨开草浪。路线图旗舰特性，随 3D 场景编辑器一同落地。</p><span class="tag">ROADMAP</span></div>
+      </div>
+      <div class="shot">
+        <div class="pic">🔌</div>
+        <div class="cap"><h3>插座蓝图系统</h3><p>像接电源线一样接逻辑：节点有输入输出口，拖线即连线。剧情控制 14 节点、物理、UI、音频全图形化，运行时实时执行。</p><span class="tag">已实现</span></div>
+      </div>
+    </div>
+  </section>
 
-<span class="c"># 构建全 13 个程序</span>
-git clone https://github.com/Jdj497949/PhysicsEngine3D.git
-<span class="k">cd</span> PhysicsEngine3D
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j$(nproc)
+  <!-- ABOUT -->
+  <section id="about">
+    <span class="kicker">ABOUT</span>
+    <h2>为什么<span class="grad-text">手搓</span>？</h2>
+    <div class="about-box">
+      <p class="q">"谁规定 3D 物理引擎不能做视觉小说？"</p>
+      <p>这个引擎始于一个不服：市面上引擎要么太重、要么是黑盒。<b>每一行代码都自己写</b>——从窗口创建、渲染循环、物理步进，到协程驱动的剧情脚本、跨 C 边界的 Lua 挂起唤醒。踩过的坑包括 yield across C-call boundary、Qt 元对象系统、aqt 清单变动……每一个都写进了文档。</p>
+      <p style="margin-top:12px">它证明一件事：<b>一个人 + 一部手机 + 一股狠劲</b>，也能把"引擎"两个字从大厂专利变成自己的作品。代码全部开源，欢迎来拆。</p>
+    </div>
+  </section>
 
-<span class="c"># 见证：15 关节人形布娃娃从 3 米跌落，15/15 关节完好、退出码 0</span>
-./build/3DRagdollDemo <span class="s">3</span></div>
+  <!-- DOWNLOAD -->
+  <section id="download">
+    <span class="kicker">DOWNLOAD</span>
+    <h2>拿走，<span class="grad-text">直接玩</span></h2>
+    <div class="dl">
+      <a class="dl-btn" id="dl-win" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🪟</span><span class="name">Windows</span><span class="ver" id="v-win">获取版本中…</span></a>
+      <a class="dl-btn" id="dl-mac" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🍎</span><span class="name">macOS</span><span class="ver" id="v-mac">获取版本中…</span></a>
+      <a class="dl-btn" id="dl-linux" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🐧</span><span class="name">Linux</span><span class="ver" id="v-linux">获取版本中…</span></a>
+    </div>
+    <p class="dl-status" id="dl-status">正在从 GitHub Releases 读取最新版本…</p>
   </section>
 
   <footer>
-    PhysicsEngine3D · MIT License ·
-    <a id="github-link" href="https://github.com/Jdj497949/PhysicsEngine3D" target="_blank" rel="noopener">GitHub 仓库</a>
-    · Powered by 纯手写 C++
+    <p>NovaEngine3D · 基于 MIT 协议开源 · © 2026 Jdj497949</p>
+    <p class="row"><a href="https://github.com/Jdj497949/PhysicsEngine3D">GitHub 主页</a> · <a href="https://github.com/Jdj497949/PhysicsEngine3D/releases">全部版本</a> · <a href="https://github.com/Jdj497949/PhysicsEngine3D/blob/main/README.md">使用文档</a></p>
   </footer>
-</main>
+</div>
 
 <script>
-/* ==================== ① 动态粒子背景 ==================== */
-(function () {
-  const canvas = document.getElementById('particles');
-  const ctx = canvas.getContext('2d');
-  let W, H, particles = [];
-  const N = 90;
-
-  function resize() {
-    W = canvas.width = innerWidth;
-    H = canvas.height = innerHeight;
-  }
-  addEventListener('resize', resize); resize();
-
-  for (let i = 0; i < N; i++) {
-    particles.push({
-      x: Math.random() * innerWidth,
-      y: Math.random() * innerHeight,
-      vx: (Math.random() - .5) * .45,
-      vy: (Math.random() - .5) * .45,
-      r: Math.random() * 1.8 + .4,
-      hue: Math.random() < .5 ? 187 : 315   // 青 / 品红
-    });
-  }
-
-  (function loop() {
-    ctx.clearRect(0, 0, W, H);
-    for (const p of particles) {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < 0 || p.x > W) p.vx *= -1;
-      if (p.y < 0 || p.y > H) p.vy *= -1;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${p.hue}, 100%, 65%, .85)`;
-      ctx.fill();
-    }
-    // 粒子连线
-    for (let i = 0; i < N; i++) {
-      for (let j = i + 1; j < N; j++) {
-        const a = particles[i], b = particles[j];
-        const dx = a.x - b.x, dy = a.y - b.y;
-        const d2 = dx * dx + dy * dy;
-        if (d2 < 15000) {
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = `hsla(200, 100%, 70%, ${.14 * (1 - d2 / 15000)})`;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-        }
-      }
+/* ===== 星空粒子背景 ===== */
+(function(){
+  var c=document.getElementById('stars'),x=c.getContext('2d'),ps=[],W,H;
+  function rs(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  rs();addEventListener('resize',rs);
+  var n=Math.min(140,Math.floor(innerWidth/9));
+  for(var i=0;i<n;i++)ps.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.6+.4,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,h:Math.random()<.5?'79,124,255':'168,85,247'});
+  var mouse={x:-999,y:-999};
+  addEventListener('mousemove',function(e){mouse.x=e.clientX;mouse.y=e.clientY});
+  (function loop(){
+    x.clearRect(0,0,W,H);
+    for(var i=0;i<ps.length;i++){var p=ps[i];
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+      var d=Math.hypot(p.x-mouse.x,p.y-mouse.y);
+      var a=d<120?(1-d/120)*.9:.5;
+      x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fillStyle='rgba('+p.h+','+a+')';x.fill();
+      for(var j=i+1;j<ps.length;j++){var q=ps[j],dd=Math.hypot(p.x-q.x,p.y-q.y);
+        if(dd<110){x.beginPath();x.moveTo(p.x,p.y);x.lineTo(q.x,q.y);x.strokeStyle='rgba(120,110,255,'+(1-dd/110)*.14+')';x.stroke();}}
     }
     requestAnimationFrame(loop);
   })();
 })();
 
-/* ==================== ② 特色卡片 ==================== */
-const FEATURES = [
-  ['01', '布娃娃物理', '16 盒形件 + 15 个锥形扭转约束的人形布娃娃，120Hz 步进跌落，15/15 关节完好落地。'],
-  ['02', 'AES-256 资源加密', '自实现 CTR 模式加密，一键把资源打成加密包，构建即上锁。'],
-  ['03', 'Lua 协程剧情系统', 'WaitForClick 真挂起协程不卡主线程，点击/选择信号唤醒，分支选择压回 Lua 栈。'],
-  ['04', '多线程异步加载', '大图走线程池加载，主线程自由渲染，QPropertyAnimation 平滑淡入。'],
-  ['05', '插座节点逻辑', '可视化节点画布，1036 个内置节点（含剧情控制分类），拖线即逻辑。'],
-  ['06', '崩溃自恢复', '进程崩溃自动派生干净的崩溃报告员，双层弹窗收日志，可自爆重启。'],
-  ['07', '草地项目模板', '启动器一键创建摇摆草地演示项目；GPU Instancing 百万级草地渲染开发中。'],
-  ['08', '2D VN 编辑器', '画布 + 锚点 + 18 项控件库：九宫格对话框 / 角色立绘 / 选项分支按钮。'],
-  ['09', '资产转换管线', '.fbx/.obj/.gltf → .vnmodel 一键转换，可同时生成带碰撞体版本。'],
-  ['10', '三平台自动打包', 'GitHub Actions 全平台构建，push 即出 Windows/macOS/Linux 安装包。']
-];
-document.getElementById('feature-grid').innerHTML = FEATURES
-  .map(([n, t, d]) => `<div class="feature"><div class="num">FEATURE ${n}</div><h3>${t}</h3><p>${d}</p></div>`)
-  .join('');
+/* ===== 卡片悬停光斑跟随 ===== */
+document.querySelectorAll('.card').forEach(function(el){
+  el.addEventListener('mousemove',function(e){
+    var r=el.getBoundingClientRect();
+    el.style.setProperty('--mx',(e.clientX-r.left)+'px');
+    el.style.setProperty('--my',(e.clientY-r.top)+'px');
+  });
+});
 
-/* ==================== ③ GitHub Releases 自动获取最新安装包 ==================== */
-(function () {
-  const REPO = 'Jdj497949/PhysicsEngine3D';   // ← 推上仓库后改成你的用户名
-  const API = `https://api.github.com/repos/${REPO}/releases/latest`;
-  const statusEl = document.getElementById('dl-status');
-
-  const PATTERNS = {
-    windows: [/win/i, /\.zip$/i, /\.exe$/i],
-    macos:   [/mac|osx|darwin/i, /\.tar\.gz$/i, /\.dmg$/i],
-    linux:   [/linux|ubuntu|debian/i, /\.tar\.gz$/i, /\.AppImage$/i]
-  };
-
-  fetch(API)
-    .then(r => {
-      if (r.status === 404) throw new Error('还没有 Release');
-      if (!r.ok) throw new Error('GitHub API ' + r.status);
-      return r.json();
-    })
-    .then(rel => {
-      const assets = rel.assets || [];
-      const version = rel.tag_name || 'latest';
-      let matched = 0;
-
-      for (const btn of document.querySelectorAll('.dl-btn')) {
-        const os = btn.dataset.os;
-        // 按平台关键词 → 扩展名兜底，找第一个匹配的资产
-        let hit = null;
-        for (const pat of PATTERNS[os]) {
-          hit = assets.find(a => pat.test(a.name));
-          if (hit) break;
-        }
-        if (hit) {
-          btn.href = hit.browser_download_url;
-          btn.target = '_blank';
-          btn.rel = 'noopener';
-          btn.querySelector('.ver').textContent = hit.name;
-          matched++;
-        } else {
-          btn.querySelector('.ver').textContent = '构建中，稍后来';
-          btn.addEventListener('click', e => e.preventDefault());
-        }
-      }
-      statusEl.innerHTML = matched
-        ? `最新版本 <a href="https://github.com/${REPO}/releases" target="_blank" rel="noopener">${version}</a> · 共 ${matched} 个平台包就绪`
-        : '最新版本 ' + version + ' · 平台包生成中，可到 Releases 页手动下载';
-    })
-    .catch(err => {
-      statusEl.textContent = '暂时取不到版本信息（' + err.message + '），请稍后刷新或直接到 Releases 页下载';
-      statusEl.classList.add('err');
-      for (const btn of document.querySelectorAll('.dl-btn')) {
-        btn.addEventListener('click', e => e.preventDefault());
-      }
-    });
+/* ===== GitHub Releases 自动取包（带兜底） ===== */
+(function(){
+  var API='https://api.github.com/repos/Jdj497949/PhysicsEngine3D/releases/latest';
+  var st=document.getElementById('dl-status');
+  function fail(msg){st.textContent=msg||'⚠️ 自动获取失败，请直接前往 GitHub Releases 页面下载。';}
+  try{
+    fetch(API).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){
+      if(!d||!d.assets)throw 0;
+      var ver=d.tag_name||'latest';
+      st.innerHTML='✅ 最新版本 <b>'+ver+'</b> · 共 '+d.assets.length+' 个文件';
+      var map={win:['win','setup','windows'],mac:['mac','osx','darwin'],linux:['linux','.tar.gz']};
+      ['win','mac','linux'].forEach(function(k){
+        var hit=d.assets.find(function(a){var n=a.name.toLowerCase();return map[k].some(function(kw){return n.indexOf(kw)>-1})});
+        var el=document.getElementById('dl-'+k);
+        if(hit){el.href=hit.browser_download_url;document.getElementById('v-'+k).textContent=hit.name+' ('+(hit.size/1048576).toFixed(1)+'MB)';}
+        else{document.getElementById('v-'+k).textContent=ver+' · 前往 Releases 页查看';}
+      });
+    }).catch(function(){fail()});
+    setTimeout(function(){if(st.textContent.indexOf('读取')>-1)fail()},8000);
+  }catch(e){fail()}
 })();
 </script>
 </body>

@@ -86,6 +86,14 @@ footer{border-top:1px solid var(--line);padding:36px 0 48px;text-align:center;co
 footer a{color:var(--neon3);text-decoration:none}
 footer .row{margin-top:8px}
 
+/* ===== AUTHOR ===== */
+.author-box{display:flex;flex-direction:column;gap:22px}
+.author-row{display:flex;gap:18px;align-items:flex-start}
+.avatar{font-size:44px;background:var(--grad);border-radius:16px;width:76px;height:76px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 24px rgba(120,100,255,.4)}
+.author-links{display:flex;gap:14px;flex-wrap:wrap}
+.dy-btn{flex:1;min-width:200px}
+.dy-btn:hover{box-shadow:0 0 44px rgba(254,44,85,.55)}
+
 /* ===== MOBILE ===== */
 @media (max-width:760px){
   section{padding:52px 0}
@@ -95,6 +103,8 @@ footer .row{margin-top:8px}
   .show{grid-template-columns:1fr}
   .dl{grid-template-columns:1fr}
   .hero-btns{max-width:100%}
+  .author-links{flex-direction:column}
+  .author-links .btn{width:100%}
 }
 </style>
 </head>
@@ -152,6 +162,25 @@ footer .row{margin-top:8px}
       <p class="q">"谁规定 3D 物理引擎不能做视觉小说？"</p>
       <p>这个引擎始于一个不服：市面上引擎要么太重、要么是黑盒。<b>每一行代码都自己写</b>——从窗口创建、渲染循环、物理步进，到协程驱动的剧情脚本、跨 C 边界的 Lua 挂起唤醒。踩过的坑包括 yield across C-call boundary、Qt 元对象系统、aqt 清单变动……每一个都写进了文档。</p>
       <p style="margin-top:12px">它证明一件事：<b>一个人 + 一部手机 + 一股狠劲</b>，也能把"引擎"两个字从大厂专利变成自己的作品。代码全部开源，欢迎来拆。</p>
+    </div>
+  </section>
+
+  <!-- AUTHOR -->
+  <section id="author">
+    <span class="kicker">AUTHOR</span>
+    <h2>关于<span class="grad-text">作者</span></h2>
+    <div class="about-box author-box">
+      <div class="author-row">
+        <div class="avatar">👨‍💻</div>
+        <div>
+          <p class="q" style="margin-bottom:6px">Jdj497949</p>
+          <p>独立开发者 · NovaEngine3D 作者。没有团队、没有融资，一部手机 + 一股狠劲，从零手搓 15000 行引擎代码。信条：<b>谁规定大厂才能造引擎？</b></p>
+        </div>
+      </div>
+      <div class="author-links">
+        <a class="btn btn-primary dy-btn" href="https://v.douyin.com/j0ibIXnRbFk/" target="_blank" rel="noopener">🎵 关注我的抖音主页</a>
+        <a class="btn btn-ghost" href="https://github.com/Jdj497949" target="_blank" rel="noopener">🐙 GitHub 主页</a>
+      </div>
     </div>
   </section>
 

@@ -188,10 +188,15 @@ footer .row{margin-top:8px}
   <section id="download">
     <span class="kicker">DOWNLOAD</span>
     <h2>拿走，<span class="grad-text">直接玩</span></h2>
+    <p style="opacity:.75;margin:0 0 18px">三种下载方式，按需选择 👇</p>
     <div class="dl">
-      <a class="dl-btn" id="dl-win" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🪟</span><span class="name">Windows</span><span class="ver" id="v-win">获取版本中…</span></a>
-      <a class="dl-btn" id="dl-mac" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🍎</span><span class="name">macOS</span><span class="ver" id="v-mac">获取版本中…</span></a>
-      <a class="dl-btn" id="dl-linux" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🐧</span><span class="name">Linux</span><span class="ver" id="v-linux">获取版本中…</span></a>
+      <a class="dl-btn" id="dl-ed-win" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🛠️</span><span class="name">仅编辑器</span><span class="ver" id="v-ed-win">获取版本中…</span></a>
+      <a class="dl-btn" id="dl-full-win" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">📦</span><span class="name">编辑器 + 启动器</span><span class="ver" id="v-full-win">获取版本中…</span></a>
+      <a class="dl-btn" id="dl-lr-win" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🚀</span><span class="name">仅启动器</span><span class="ver" id="v-lr-win">获取版本中…</span></a>
+      <a class="dl-btn" id="dl-ed-linux" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🛠️</span><span class="name">仅编辑器 · Linux</span><span class="ver" id="v-ed-linux">获取版本中…</span></a>
+      <a class="dl-btn" id="dl-full-linux" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">📦</span><span class="name">编辑器 + 启动器 · Linux</span><span class="ver" id="v-full-linux">获取版本中…</span></a>
+      <a class="dl-btn" id="dl-lr-linux" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🚀</span><span class="name">仅启动器 · Linux</span><span class="ver" id="v-lr-linux">获取版本中…</span></a>
+      <a class="dl-btn" id="dl-mac" href="https://github.com/Jdj497949/PhysicsEngine3D/releases/latest"><span class="os">🍎</span><span class="name">macOS</span><span class="ver" id="v-mac">云端编译中…</span></a>
     </div>
     <p class="dl-status" id="dl-status">正在从 GitHub Releases 读取最新版本…</p>
   </section>
@@ -246,8 +251,17 @@ document.querySelectorAll('.card').forEach(function(el){
       if(!d||!d.assets)throw 0;
       var ver=d.tag_name||'latest';
       st.innerHTML='✅ 最新版本 <b>'+ver+'</b> · 共 '+d.assets.length+' 个文件';
-      var map={win:['win','setup','windows'],mac:['mac','osx','darwin'],linux:['linux','.tar.gz']};
-      ['win','mac','linux'].forEach(function(k){
+      // 三种选择：仅编辑器 / 编辑器+启动器 / 仅启动器
+      var map={
+        'ed-win':  ['setup'],
+        'full-win':['windows.zip'],
+        'lr-win':  ['launcher-windows'],
+        'ed-linux':['.tar.gz'],
+        'full-linux':['full-linux'],
+        'lr-linux':['launcher-linux'],
+        'mac':     ['mac','osx','darwin']
+      };
+      Object.keys(map).forEach(function(k){
         var hit=d.assets.find(function(a){var n=a.name.toLowerCase();return map[k].some(function(kw){return n.indexOf(kw)>-1})});
         var el=document.getElementById('dl-'+k);
         if(hit){el.href=hit.browser_download_url;document.getElementById('v-'+k).textContent=hit.name+' ('+(hit.size/1048576).toFixed(1)+'MB)';}

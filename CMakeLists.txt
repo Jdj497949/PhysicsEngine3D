@@ -168,3 +168,14 @@ target_link_libraries(3DNovelDemo PRIVATE
     ${BULLET_LIBRARIES}
     ${LUA_LIBRARIES}
 )
+
+# ============ VNLauncher: Hub 模式启动器（第十七阶段：商业级五页导航 + 一键下载 + 学习中心） ============
+find_package(Qt6 QUIET COMPONENTS Network)
+add_executable(VNLauncher
+    launcherHub/VNLauncher.cpp
+)
+set_target_properties(VNLauncher PROPERTIES AUTOMOC ON)
+target_link_libraries(VNLauncher PRIVATE
+    Qt6::Widgets
+    Qt6::Network
+)
